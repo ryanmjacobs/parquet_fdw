@@ -466,17 +466,23 @@ Datum ParquetReader::read_primitive_type(arrow::Array *array,
             res = DateADTGetDatum(d + (UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE));
             break;
         }
-
+        // TOPHAP
         case arrow::Type::DECIMAL128:
+        case arrow::Type::DECIMAL256:
         {
-            // TODO: use actual SQL numeric
-            arrow::Decimal128Array *dec128_array = (arrow::Decimal128Array *) array;
-            double val = std::stod(dec128_array->FormatValue(i));
-            res = Float8GetDatum(val);
+            // NOTE: DecimalArray == Decimal128Array for backwards-compatibility.
+            //       It might be deprecated in the future.
+            arrow::DecimalArray *decimal_array = (arrow::DecimalArray *) array;
+            std::string str = decimal_array->FormatValue(i);
+            res = DirectFunctionCall3(
+                numeric_in,
+                CStringGetDatum(str.c_str()),
+                ObjectIdGetDatum(0),
+                Int32GetDatum(-1)
+            );
             break;
         }
-        break;
-
+        /* TODO: add other types */
         default:
             throw Error("parquet_fdw: unsupported column type: %s",
                         typinfo.arrow.type_name.c_str());
