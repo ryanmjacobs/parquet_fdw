@@ -471,8 +471,7 @@ Datum ParquetReader::read_primitive_type(arrow::Array *array,
         {
             // TODO: use actual SQL numeric
             arrow::Decimal128Array *dec128_array = (arrow::Decimal128Array *) array;
-            const char *str = dec128_array->FormatValue(i).c_str();
-            double val = atof(str);
+            double val = std::stod(dec128_array->FormatValue(i));
             res = Float8GetDatum(val);
             break;
         }
