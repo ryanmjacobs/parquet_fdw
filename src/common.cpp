@@ -69,6 +69,8 @@ to_postgres_type(int arrow_type)
             return TIMESTAMPOID;
         case arrow::Type::DATE32:
             return DATEOID;
+        case arrow::Type::DECIMAL128:
+            return FLOAT8OID;
         default:
             return InvalidOid;
     }

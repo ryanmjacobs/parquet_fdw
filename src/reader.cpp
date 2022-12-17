@@ -466,7 +466,18 @@ Datum ParquetReader::read_primitive_type(arrow::Array *array,
             res = DateADTGetDatum(d + (UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE));
             break;
         }
-        /* TODO: add other types */
+
+        case arrow::Type::DECIMAL128:
+        {
+            // TODO: use actual SQL numeric
+            arrow::Decimal128Array *dec128_array = (arrow::Decimal128Array *) array;
+            const char *str = dec128_array->FormatValue(i).c_str();
+            double val = atof(str);
+            res = Float8GetDatum(val);
+            break;
+        }
+        break;
+
         default:
             throw Error("parquet_fdw: unsupported column type: %s",
                         typinfo.arrow.type_name.c_str());
