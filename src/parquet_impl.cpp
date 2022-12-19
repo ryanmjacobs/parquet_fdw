@@ -80,6 +80,8 @@ extern "C"
 #else
 #include "catalog/pg_am_d.h"
 #endif
+
+#include "pg_atoi.h"
 }
 
 
@@ -1085,7 +1087,7 @@ parquetGetForeignRelSize(PlannerInfo *root,
     fdw_private->filenames = NIL;
     foreach (lc, filenames_orig)
     {
-        char *filename = strVal((Value *) lfirst(lc));
+        char *filename = strVal((String *) lfirst(lc));
         List *rowgroups = extract_rowgroups_list(filename, tupleDesc, filters,
                                                  &matched_rows, &total_rows);
 
@@ -1513,16 +1515,16 @@ parquetBeginForeignScan(ForeignScanState *node, int /* eflags */)
                 attrs_sorted = (List *) lfirst(lc);
                 break;
             case 3:
-                use_mmap = (bool) intVal((Value *) lfirst(lc));
+                use_mmap = (bool) intVal((Integer *) lfirst(lc));
                 break;
             case 4:
-                use_threads = (bool) intVal((Value *) lfirst(lc));
+                use_threads = (bool) intVal((Integer *) lfirst(lc));
                 break;
             case 5:
-                reader_type = (ReaderType) intVal((Value *) lfirst(lc));
+                reader_type = (ReaderType) intVal((Integer *) lfirst(lc));
                 break;
             case 6:
-                max_open_files = intVal((Value *) lfirst(lc));
+                max_open_files = intVal((Integer *) lfirst(lc));
                 break;
             case 7:
                 rowgroups_list = (List *) lfirst(lc);
@@ -1585,7 +1587,7 @@ parquetBeginForeignScan(ForeignScanState *node, int /* eflags */)
 
         forboth (lc, filenames, lc2, rowgroups_list)
         {
-            char *filename = strVal((Value *) lfirst(lc));
+            char *filename = strVal((String *) lfirst(lc));
             List *rowgroups = (List *) lfirst(lc2);
 
             festate->add_file(filename, rowgroups);
@@ -1701,7 +1703,7 @@ parquetAcquireSampleRowsFunc(Relation relation, int /* elevel */,
 
     foreach (lc, fdw_private.filenames)
     {
-        char *filename = strVal((Value *) lfirst(lc));
+        char *filename = strVal((String *) lfirst(lc));
 
         try
         {
@@ -1820,7 +1822,7 @@ parquetExplainForeignScan(ForeignScanState *node, ExplainState *es)
 
 	fdw_private = ((ForeignScan *) node->ss.ps.plan)->fdw_private;
     filenames = (List *) linitial(fdw_private);
-    reader_type = (ReaderType) intVal((Value *) list_nth(fdw_private, 5));
+    reader_type = (ReaderType) intVal((Integer *) list_nth(fdw_private, 5));
     rowgroups_list = (List *) llast(fdw_private);
 
     switch (reader_type)
@@ -1844,7 +1846,7 @@ parquetExplainForeignScan(ForeignScanState *node, ExplainState *es)
 
     forboth(lc, filenames, lc2, rowgroups_list)
     {
-        char   *filename = strVal((Value *) lfirst(lc));
+        char   *filename = strVal((String *) lfirst(lc));
         List   *rowgroups = (List *) lfirst(lc2);
         bool    is_first = true;
 
@@ -2061,7 +2063,7 @@ parquet_fdw_validator_impl(PG_FUNCTION_ARGS)
             foreach(lc, filenames)
             {
                 struct stat stat_buf;
-                char       *fn = strVal((Value *) lfirst(lc));
+                char       *fn = strVal((String *) lfirst(lc));
 
                 if (stat(fn, &stat_buf) != 0)
                 {
